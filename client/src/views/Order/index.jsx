@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 // material-ui
 import { Card, CardContent, Grid, Typography, Button, Divider, Box, Tab, IconButton, MenuItem, FormControl, Popover, Select, Radio, RadioGroup, FormControlLabel, Checkbox, FormGroup } from '@mui/material';
@@ -532,11 +532,12 @@ const MenuOrdered = ({ product_id, product_desc, sell_price, quantity, onRemoveI
 };
 
 const OrderDetails = () => {
-  const [table, setTable] = useState('Select Table');
-  const [dineOption, setDineOption] = useState('Order Type');
-  const [tableOptions, setTableOptions] = useState(['Order Type']);
+  const location = useLocation();
+  const [table, setTable] = useState(location.state?.table || 'Select Table');
+  const [dineOption, setDineOption] = useState(location.state?.dineOption || 'Order Type');
+  const [tableOptions, setTableOptions] = useState([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch('http://localhost:38998/ord/tl', {
@@ -554,27 +555,23 @@ const OrderDetails = () => {
             ],
           }),
         });
-  
+
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
-  
+
         const result = await response.json();
-        console.log('List Data:', result); // Debugging: Check response structure
-  
         if (result && result.data && Array.isArray(result.data.data)) {
-          const availableTables = result.data.data.filter(table => table.is_occ === 0); // Filter by is_occ
+          const availableTables = result.data.data.filter((t) => t.is_occ === 0);
           setTableOptions(availableTables);
         } else {
           console.error('Unexpected response structure:', result);
-          setTableOptions([]); // Fallback to an empty array if data is not valid
         }
       } catch (error) {
-        console.error('Failed to fetch meal periods:', error);
-        setTableOptions([]); // Fallback to an empty array on error
+        console.error('Failed to fetch tables:', error);
       }
     };
-  
+
     fetchData();
   }, []);
 
@@ -590,24 +587,32 @@ const OrderDetails = () => {
   };
 
   return (
-    <Box sx={{ 
-        padding: 2, 
-        borderBottom: '1px solid #ccc', 
-        backgroundColor: 'transparent', 
-        margin: '10px',                  
-    }}>
-      <Typography variant="h4" fontWeight="bold" color="#33372C" gutterBottom 
-       sx={{ textAlign: 'center' }}
+    <Box
+      sx={{
+        padding: 2,
+        borderBottom: '1px solid #ccc',
+        backgroundColor: 'transparent',
+        margin: '10px',
+      }}
+    >
+      <Typography
+        variant="h4"
+        fontWeight="bold"
+        color="#33372C"
+        gutterBottom
+        sx={{ textAlign: 'center' }}
       >
         Order Details
       </Typography>
-      
+
       <Box sx={{ display: 'flex', gap: "5px" }}>
-        <FormControl fullWidth mx="30px" sx={{ borderRadius: '24px', flex: 1 }}>
-          <Select value={dineOption} onChange={handleDineOptionChange}
+        <FormControl fullWidth sx={{ borderRadius: '24px', flex: 1 }}>
+          <Select
+            value={dineOption}
+            onChange={handleDineOptionChange}
             sx={{
               borderRadius: '24px',
-              backgroundColor: '#f5f5f5', 
+              backgroundColor: '#f5f5f5',
               width: '100%',
               height: '35px',
             }}
@@ -619,19 +624,22 @@ const OrderDetails = () => {
           </Select>
         </FormControl>
         {dineOption === "Dine In" && (
-          <FormControl fullWidth mx="30px"
-            sx={{ borderRadius: "24px", flex: 1 }}>
-            <Select value={table || ''} onChange={handleTableChange} 
+          <FormControl fullWidth sx={{ borderRadius: "24px", flex: 1 }}>
+            <Select
+              value={table}
+              onChange={handleTableChange}
               sx={{
-                borderRadius: '24px', 
-                backgroundColor: '#f5f5f5', 
+                borderRadius: '24px',
+                backgroundColor: '#f5f5f5',
                 width: '100%',
                 height: '35px',
               }}
             >
               <MenuItem value="Select Table" disabled>Select Table</MenuItem>
               {tableOptions.map((row) => (
-                <MenuItem key={row.order_trans_table_id} value={row.order_trans_table_id}>{row.table_desc}</MenuItem>
+                <MenuItem key={row.order_trans_table_id} value={row.order_trans_table_id}>
+                  {row.table_desc}
+                </MenuItem>
               ))}
             </Select>
           </FormControl>
@@ -640,5 +648,6 @@ const OrderDetails = () => {
     </Box>
   );
 };
+
 
 export default Order;

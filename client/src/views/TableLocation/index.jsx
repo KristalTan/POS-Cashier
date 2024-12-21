@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 // material-ui
@@ -10,112 +10,87 @@ import TabList from '@mui/lab/TabList';
 import Breadcrumb from 'component/Breadcrumb';
 import { gridSpacing } from 'config.js';
 
-const table = [
-  {
-    order_trans_table_id: '1',
-    table_section_name: "Zone A",
-    table_desc: "A1",
-    is_occ: 1,
-    order_trans_id: 'order-1',
-    doc_no: '',
-    modified_on: '2024-11-30 12:15:00',
-    modified_by: 'Ayam',
-    tr_date:'2024-11-30 12:15:00',
-    tr_type_desc: 'Type 1',
-    tr_status: 'Occupied',
-    amt: 100.0,
-    pax: 4
-  },
-  {
-    order_trans_table_id: '2',
-    table_section_name: "Zone A",
-    table_desc: "A2",
-    is_occ: 1,
-    order_trans_id: 'order-2',
-    doc_no: 'doc-2',
-    modified_on: '2024-11-30 12:15:00',
-    modified_by: 'Ayam',
-    tr_date:'2024-11-30 12:15:00',
-    tr_type_desc: 'Type 2',
-    tr_status: 'Occupied',
-    amt: 200.0,
-    pax: 2
-  },
-  {
-    order_trans_table_id: '3',
-    table_section_name: "Zone B",
-    table_desc: "B1",
-    is_occ: 0,
-    order_trans_id: null,
-    doc_no: null,
-    modified_on: null,
-    modified_by: null,
-    tr_date: null,
-    tr_type_desc: 'Available',
-    tr_status: 'Available',
-    amt: 0.0,
-    pax: 0
-  },
-  {
-    order_trans_table_id: '4',
-    table_section_name: "Zone C",
-    table_desc: "C1",
-    is_occ: 0,
-    order_trans_id: null,
-    doc_no: null,
-    modified_on: null,
-    modified_by: null,
-    tr_date: null,
-    tr_type_desc: 'Available',
-    tr_status: 'Available',
-    amt: 0.0,
-    pax: 0
-  },
-  {
-    order_trans_table_id: '5',
-    table_section_name: "Zone B",
-    table_desc: "B2",
-    is_occ: 0,
-    order_trans_id: null,
-    doc_no: null,
-    modified_on: null,
-    modified_by: null,
-    tr_date: null,
-    tr_type_desc: 'Available',
-    tr_status: 'Available',
-    amt: 0.0,
-    pax: 0
-  },
-  {
-    order_trans_table_id: '6',
-    table_section_name: "Zone C",
-    table_desc: "C2",
-    is_occ: 1,
-    order_trans_id: '000001',
-    doc_no: '',
-    modified_on: '2024-11-30 12:15:00',
-    modified_by: 'Ayam',
-    tr_date:'2024-11-30 12:15:00',
-    tr_type_desc: 'Type 2',
-    tr_status: 'Occupied',
-    amt: 200.0,
-    pax: 2
-  }
-];
-
-const table_sec = [
-  { table_section_id: 1, table_section_name: "Zone A", is_in_use: 1, display_seq: 12 },
-  { table_section_id: 2, table_section_name: "Zone B", is_in_use: 1, display_seq: 10 },
-  { table_section_id: 3, table_section_name: "Zone C", is_in_use: 1, display_seq: 8 }
-];
-
-const Table_Location = () => {
+const TableLocation = () => {
   const [selectedZone, setSelectedZone] = useState('All');
+  const [table, setTable] = useState([]); // State for table data
+  const [table_sec, setTableSec] = useState([]); // State for table sections
   const navigate = useNavigate();
 
   const handleChangeZone = (event, newValue) => {
     setSelectedZone(newValue);
   };
+
+  useEffect(() => {
+    const fetchTableLocation = async () => {
+      try {
+        const response = await fetch('http://localhost:38998/ord/tl', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            code: 'app-order-trans',
+            axn: 'tl',
+            data: [
+              {
+                current_uid: 'tester',
+              },
+            ],
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result && result.data && Array.isArray(result.data.data)) {
+          setTable(result.data.data); // Update table state with fetched data
+        } else {
+          console.error('Unexpected table structure:', result);
+        }
+      } catch (error) {
+        console.error('Failed to fetch tables:', error);
+      }
+    };
+
+    const fetchTableSection = async () => {
+      try {
+        const response = await fetch('http://localhost:38998/ts/l', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            code: 'setting-table-sec',
+            axn: 'l',
+            data: [
+              {
+                current_uid: 'tester',
+                is_in_use: 1,
+              },
+            ],
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result && result.data && Array.isArray(result.data.data)) {
+          setTableSec(result.data.data); // Update table sections state with fetched data
+        } else {
+          console.error('Unexpected table section structure:', result);
+        }
+      } catch (error) {
+        console.error('Failed to fetch table sections:', error);
+      }
+    };
+
+    fetchTableLocation();
+    fetchTableSection();
+  }, []);
 
   // Calculate the total available and occupied tables
   const totalAvailableTables = table.filter((t) => t.is_occ === 0).length;
@@ -126,9 +101,7 @@ const Table_Location = () => {
     const filteredTables =
       selectedZone === 'All'
         ? table
-        : table.filter(
-            (t) => t.table_section_name === selectedZone
-          );
+        : table.filter((t) => t.table_section_name === selectedZone);
 
     return (
       <Box
@@ -149,11 +122,21 @@ const Table_Location = () => {
             }}
             onClick={() => {
               if (!t.is_occ) {
-                navigate('/order');
-              } else if (t.is_occ) {
-                navigate('/payment');
+                navigate('/order', {
+                  state: { 
+                    dineOption: 'Dine In', 
+                    table: t.order_trans_table_id 
+                  }
+                });
+              } else {
+                navigate('/payment', {
+                  state: { 
+                    orderTransId: t.order_trans_id 
+                  }
+                });
               }
             }}
+            
           >
             <Box margin={4}>
               <Typography variant="h7" color={t.is_occ ? "#FFFFFF" : "#557C56"}>
@@ -260,4 +243,4 @@ const Table_Location = () => {
   );
 };
 
-export default Table_Location;
+export default TableLocation;

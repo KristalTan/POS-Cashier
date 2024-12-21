@@ -6,7 +6,7 @@ import Loadable from 'component/Loadable';
 
 const DashboardDefault = Loadable(lazy(() => import('views/Dashboard/Default')));
 const Order = Loadable(lazy(() => import('views/Order')));
-const Table_Location = Loadable(lazy(() => import('views/Table_Location')));
+const TableLocation = Loadable(lazy(() => import('views/TableLocation')));
 const PaymentBillings = Loadable(lazy(() => import('views/PaymentBillings')));
 const OrderHistory = Loadable(lazy(() => import('views/OrderHistory')));
 
@@ -16,10 +16,10 @@ const MainRoutes = {
   path: '/',
   element: <MainLayout />,
   children: [
-    {path: '/',element: <Table_Location/>},
+    {path: '/',element: <TableLocation/>},
     // {path: '/dashboard/default',element: <DashboardDefault />},
     { path: '/order', element: <Order/> },
-    { path: '/table', element: <Table_Location/> },
+    { path: '/table', element: <TableLocation/> },
     { path: '/payment', element: <PaymentBillings/> },
     { path: '/history', element: <OrderHistory/> }
 
